@@ -14,6 +14,7 @@ const API_BASE = "https://sql-runner-backend-tr4a.onrender.com/api";
 export async function login(email, password) {
   try {
     // const res = await fetch("https://sql-runner-backend-tr4a.onrender.com/api/login/", {
+    console.log("Sending request to:", `${API_BASE}/login/`);
     const res = await fetch(`${API_BASE}/login/`, {
 
       method: "POST",
@@ -31,6 +32,7 @@ export async function login(email, password) {
 
 export async function signup(name, email, password) {
   try {
+    console.log("Sending request to:", `${API_BASE}/signup/`);
     const res = await fetch(`${API_BASE}/signup/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

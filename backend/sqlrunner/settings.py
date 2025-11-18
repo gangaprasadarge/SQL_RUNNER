@@ -16,11 +16,12 @@ FRONTEND_URL = "https://sql-runner-23g4.onrender.com"
 # FRONTEND_URL = "http://localhost:3000"
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000", 
     "https://sql-runner-23g4.onrender.com",
+    "http://localhost:3000",
 ]
-CORS_ALLOW_ALL_ORIGINS = False
 
+
+CORS_ALLOW_CREDENTIALS = True
 
 # CSRF_TRUSTED_ORIGINS = [
 #     "http://localhost:3000",
