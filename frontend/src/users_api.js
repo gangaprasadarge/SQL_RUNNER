@@ -2,7 +2,8 @@ const API_BASE = process.env.REACT_APP_API_BASE;
 
 export async function login(email, password) {
   try {
-    const res = await fetch(`${API_BASE}/login/`, {
+    const res = await fetch(`${API_BASE}/api/login/`, {
+
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password })
@@ -18,7 +19,7 @@ export async function login(email, password) {
 
 export async function signup(name, email, password) {
   try {
-    const res = await fetch(`${API_BASE}/signup/`, {
+    const res = await fetch(`${API_BASE}/api/signup/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email, password }),
