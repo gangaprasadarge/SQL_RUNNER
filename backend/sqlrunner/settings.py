@@ -2,37 +2,17 @@ from pathlib import Path
 from datetime import timedelta
 import os
 
-PORT = os.environ.get("PORT", "8000")
-
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-4#)(g)hs5^mtgfk%9a6!2_wp+5q%nwis&l@&5qmjbklqomm0@g'
+SECRET_KEY = os.environ.get(
+    "DJANGO_SECRET_KEY",
+    "django-insecure-4#)(g)hs5^mtgfk%9a6!2_wp+5q%nwis&l@&5qmjbklqomm0@g"
+)
 
-
-
-DEBUG = True
+DEBUG = False
 
 FRONTEND_URL = "https://sql-runner-23g4.onrender.com"
-# FRONTEND_URL = "http://localhost:3000"
-
-CORS_ALLOWED_ORIGINS = [
-    "https://sql-runner-23g4.onrender.com",
-    "http://localhost:3000",
-]
-
-
-CORS_ALLOW_CREDENTIALS = True
-
-# CSRF_TRUSTED_ORIGINS = [
-#     "http://localhost:3000",
-#     "http://127.0.0.1:8000",
-#     "http://localhost:8000",
-#     "https://sql-runner-23g4.onrender.com",
-#     "https://sql-runner-backend-tr4a.onrender.com",
-# ]
-CSRF_TRUSTED_ORIGINS = [
-    "https://*.onrender.com",
-]
+LOCAL_FRONTEND = "http://localhost:3000"
 
 ALLOWED_HOSTS = [
     "sql-runner-backend-tr4a.onrender.com",
@@ -41,10 +21,16 @@ ALLOWED_HOSTS = [
     "127.0.0.1"
 ]
 
-
+CORS_ALLOWED_ORIGINS = [
+    FRONTEND_URL,
+    LOCAL_FRONTEND
+]
 
 CORS_ALLOW_CREDENTIALS = True
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.onrender.com"
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -53,13 +39,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'corsheaders',               
+    'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
     'api',
-
 ]
-
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -81,11 +65,9 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-
 ]
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-
 
 ROOT_URLCONF = 'sqlrunner.urls'
 
@@ -106,7 +88,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'sqlrunner.wsgi.application'
-
 
 DATABASES = {
     'default': {
@@ -139,20 +120,9 @@ EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True").lower() in ("true", "1",
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "argegangaprasad@gmail.com")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 
-
-
-
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-        },
-    },
-    "root": {
-        "handlers": ["console"],
-        "level": "ERROR",
-    },
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "root": {"handlers": ["console"], "level": "ERROR"},
 }
-
