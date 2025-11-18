@@ -5,16 +5,17 @@ export async function login(email, password) {
     const res = await fetch(`${API_BASE}/login/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password })
     });
 
     const data = await res.json().catch(() => null);
     if (res.ok) return data || {};
-    return { error: (data && (data.error || data.detail)) || `Request failed (${res.status})` };
-  } catch (_) {
-    return { error: "Network error. Please check your connection or API URL." };
+    return { error: (data && data.detail) || "Login failed" };
+  } catch (e) {
+    return { error: "Network error. Please check your connection." };
   }
 }
+
 
 export async function signup(name, email, password) {
   try {
