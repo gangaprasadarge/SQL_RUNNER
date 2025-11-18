@@ -13,18 +13,29 @@ SECRET_KEY = 'django-insecure-4#)(g)hs5^mtgfk%9a6!2_wp+5q%nwis&l@&5qmjbklqomm0@g
 DEBUG = True
 
 FRONTEND_URL = "https://sql-runner-23g4.onrender.com"
+# FRONTEND_URL = "http://localhost:3000"
+
 CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000", 
     "https://sql-runner-23g4.onrender.com",
 ]
+CORS_ALLOW_ALL_ORIGINS = False
+
 
 CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
     "https://sql-runner-23g4.onrender.com",
     "https://sql-runner-backend-tr4a.onrender.com",
 ]
 
 ALLOWED_HOSTS = [
     "sql-runner-backend-tr4a.onrender.com",
+    "localhost",
+    "127.0.0.1",
 ]
+
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -39,7 +50,7 @@ INSTALLED_APPS = [
     'corsheaders',               
     'rest_framework',
     'rest_framework_simplejwt',
-    'backend.api',
+    'api',
 
 ]
 
@@ -70,7 +81,7 @@ MIDDLEWARE = [
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
-ROOT_URLCONF = 'backend.sqlrunner.urls'
+ROOT_URLCONF = 'sqlrunner.urls'
 
 TEMPLATES = [
     {
@@ -88,7 +99,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'backend.sqlrunner.wsgi.application'
+WSGI_APPLICATION = 'sqlrunner.wsgi.application'
 
 
 DATABASES = {
