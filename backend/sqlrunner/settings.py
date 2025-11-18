@@ -10,7 +10,7 @@ SECRET_KEY = 'django-insecure-4#)(g)hs5^mtgfk%9a6!2_wp+5q%nwis&l@&5qmjbklqomm0@g
 
 
 
-DEBUG = False
+DEBUG = True
 
 FRONTEND_URL = "https://sql-runner-23g4.onrender.com"
 CORS_ALLOWED_ORIGINS = [
@@ -123,4 +123,19 @@ EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "argegangaprasad@gmail.com")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 
 
+
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "ERROR",
+    },
+}
 
