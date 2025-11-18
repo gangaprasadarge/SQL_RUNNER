@@ -8,12 +8,10 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-
-from rest_framework import serializers
 
 
 # ==========================
@@ -34,6 +32,7 @@ def get_conn():
 # ==========================
 
 @api_view(["POST"])
+@permission_classes([AllowAny])
 def login(request):
     email = request.data.get("email")
     password = request.data.get("password")
@@ -41,7 +40,9 @@ def login(request):
     if not email or not password:
         return Response({"error": "Email and password required"}, status=400)
 
-    # Django auth: username = email
+    if not User.objects.filter(username=email).exists():
+        return Response({"error": "Invalid email or password"}, status=400)
+
     user = authenticate(username=email, password=password)
 
     if user is None:
@@ -61,38 +62,30 @@ def login(request):
 
 
 # ==========================
-#   SIGNUP API
+#   SIGNUP API (FIXED)
 # ==========================
 
-class SignupSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
-    password2 = serializers.CharField(write_only=True)
-
-    class Meta:
-        model = User
-        fields = ("username", "email", "password", "password2")
-
-    def validate(self, data):
-        if data["password"] != data["password2"]:
-            raise serializers.ValidationError("Passwords do not match")
-        return data
-
-    def create(self, validated_data):
-        validated_data.pop("password2")
-        return User.objects.create_user(
-            username=validated_data["username"],
-            email=validated_data["email"],
-            password=validated_data["password"]
-        )
-
-
 @api_view(["POST"])
+@permission_classes([AllowAny])
 def signup(request):
-    serializer = SignupSerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response({"success": True}, status=201)
-    return Response(serializer.errors, status=400)
+    name = request.data.get("name")
+    email = request.data.get("email")
+    password = request.data.get("password")
+
+    if not name or not email or not password:
+        return Response({"error": "All fields are required"}, status=400)
+
+    if User.objects.filter(username=email).exists():
+        return Response({"error": "Email already registered"}, status=400)
+
+    user = User.objects.create_user(
+        username=email,
+        email=email,
+        password=password,
+        first_name=name
+    )
+
+    return Response({"success": True, "message": "Account created successfully!"}, status=201)
 
 
 # ==========================
@@ -201,7 +194,7 @@ def health(request):
 
 
 # ==========================
-#   TEMP USER CREATION (OPTIONAL)
+#   CREATE TEMP USER
 # ==========================
 
 @method_decorator(csrf_exempt, name='dispatch')
