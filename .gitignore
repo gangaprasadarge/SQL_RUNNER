@@ -1,0 +1,33 @@
+# Virtual environments
+/backend/gp/
+gp/
+
+# Python cache and bytecode
+__pycache__/
+*.py[cod]
+
+# Databases
+/backend/db.sqlite3
+db.sqlite3
+*.sqlite3
+
+# Environment and secret files
+.env
+backend/.env
+frontend/.env
+secrets.json
+
+# Logs and temporary files
+*.log
+logs/
+*.tmp
+*.bak
+
+# IDEs and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Node
+/frontend/node_modules/
