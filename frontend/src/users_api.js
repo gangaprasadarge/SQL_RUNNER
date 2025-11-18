@@ -2,7 +2,8 @@ const API_BASE = process.env.REACT_APP_API_BASE;
 
 export async function login(email, password) {
   try {
-    const res = await fetch(`${API_BASE}/login/`, {
+    // const res = await fetch(`${API_BASE}/login/`, {
+    const res = await fetch("https://sql-runner-backend-tr4a.onrender.com/api/login/", {
 
       method: "POST",
       headers: { "Content-Type": "application/json" },
