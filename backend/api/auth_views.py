@@ -12,6 +12,7 @@ from django.conf import settings
 # -------------------------
 # SIGNUP
 # -------------------------
+@method_decorator(csrf_exempt, name='dispatch')
 class SignupView(APIView):
     def post(self, request):
         name = request.data.get("name")
@@ -21,17 +22,19 @@ class SignupView(APIView):
         if not name or not email or not password:
             return Response({"error": "Missing fields"}, status=400)
 
-        if User.objects.filter(email=email).exists():
+        # Check both username and email
+        if User.objects.filter(username=email).exists() or User.objects.filter(email=email).exists():
             return Response({"error": "Email already registered"}, status=400)
 
         user = User.objects.create_user(
-            username=email,       # important!
+            username=email,
             email=email,
             password=password,
             first_name=name
         )
 
-        return Response({"success": True, "id": user.id}, status=201)
+        return Response({"success": True})
+
 
 
 # -------------------------

@@ -22,19 +22,24 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_ALL_ORIGINS = False
 
 
+# CSRF_TRUSTED_ORIGINS = [
+#     "http://localhost:3000",
+#     "http://127.0.0.1:8000",
+#     "http://localhost:8000",
+#     "https://sql-runner-23g4.onrender.com",
+#     "https://sql-runner-backend-tr4a.onrender.com",
+# ]
 CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:8000",
-    "http://localhost:8000",
-    "https://sql-runner-23g4.onrender.com",
-    "https://sql-runner-backend-tr4a.onrender.com",
+    "https://*.onrender.com",
 ]
 
 ALLOWED_HOSTS = [
     "sql-runner-backend-tr4a.onrender.com",
+    "sql-runner-23g4.onrender.com",
     "localhost",
-    "127.0.0.1",
+    "127.0.0.1"
 ]
+
 
 
 CORS_ALLOW_CREDENTIALS = True
