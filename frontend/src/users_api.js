@@ -11,7 +11,7 @@ export async function login(email, password) {
     const data = await res.json().catch(() => null);
     if (res.ok) return data || {};
     return { error: (data && (data.error || data.detail)) || `Request failed (${res.status})` };
-  } catch (err) {
+  } catch (_) {
     return { error: "Network error. Please check your connection or API URL." };
   }
 }
@@ -23,10 +23,11 @@ export async function signup(name, email, password) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email, password }),
     });
+
     const data = await res.json().catch(() => null);
     if (res.ok) return data || {};
     return { error: (data && (data.error || data.detail)) || `Request failed (${res.status})` };
-  } catch (err) {
+  } catch (_) {
     return { error: "Network error. Please check your connection or API URL." };
   }
 }
@@ -38,10 +39,11 @@ export async function forgotPassword(email) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email }),
     });
+
     const data = await res.json().catch(() => null);
     if (res.ok) return data || { success: true };
     return { error: (data && (data.error || data.detail)) || `Request failed (${res.status})` };
-  } catch (err) {
+  } catch (_) {
     return { error: "Network error. Please check your connection or API URL." };
   }
 }
@@ -53,10 +55,11 @@ export async function resetPassword(uid, token, new_password) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ new_password }),
     });
+
     const data = await res.json().catch(() => null);
     if (res.ok) return data || { success: true };
     return { error: (data && (data.error || data.detail)) || `Request failed (${res.status})` };
-  } catch (err) {
+  } catch (_) {
     return { error: "Network error. Please check your connection or API URL." };
   }
 }
@@ -72,7 +75,6 @@ export async function refreshToken() {
   });
 
   const data = await res.json();
-
   if (data.access) {
     localStorage.setItem("token", data.access);
     return data.access;

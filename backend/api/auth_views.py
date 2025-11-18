@@ -5,17 +5,10 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.conf import settings
 
-# No need for authenticate() because email= username
-# No need for csrf_exempt for JWT API views
 
-
-# -------------------------------
-#  SIGNUP
-# -------------------------------
 class SignupView(APIView):
     def post(self, request):
         name = request.data.get("name")
@@ -29,7 +22,7 @@ class SignupView(APIView):
             return Response({"error": "Email already registered"}, status=400)
 
         user = User.objects.create_user(
-            username=email,       # email is the username
+            username=email,
             email=email,
             password=password,
             first_name=name
@@ -38,9 +31,6 @@ class SignupView(APIView):
         return Response({"success": True, "id": user.id}, status=201)
 
 
-# -------------------------------
-#  LOGIN (EMAIL BASED)
-# -------------------------------
 class LoginView(APIView):
     def post(self, request):
         email = request.data.get("email")
@@ -49,17 +39,14 @@ class LoginView(APIView):
         if not email or not password:
             return Response({"error": "Email and password required"}, status=400)
 
-        # find user by email
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
             return Response({"error": "Invalid credentials"}, status=400)
 
-        # check password manually
         if not user.check_password(password):
             return Response({"error": "Invalid credentials"}, status=400)
 
-        # generate JWT tokens
         refresh = RefreshToken.for_user(user)
 
         return Response({
@@ -73,23 +60,16 @@ class LoginView(APIView):
         }, status=200)
 
 
-# -------------------------------
-#  FORGOT PASSWORD
-# -------------------------------
 class ForgotPasswordView(APIView):
     def post(self, request):
         email = request.data.get("email")
 
         user = User.objects.filter(email=email).first()
         if not user:
-            # return success even if user doesn't exist (security best practice)
             return Response({"success": True})
 
-        # create token + uid
         token = PasswordResetTokenGenerator().make_token(user)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
-
-        # reset link
         reset_link = f"{settings.FRONTEND_URL}/reset-password/{uid}/{token}"
 
         send_mail(
@@ -103,9 +83,6 @@ class ForgotPasswordView(APIView):
         return Response({"success": True})
 
 
-# -------------------------------
-#  RESET PASSWORD
-# -------------------------------
 class ResetPasswordView(APIView):
     def post(self, request, uidb64, token):
         new_password = request.data.get("new_password")
@@ -119,11 +96,9 @@ class ResetPasswordView(APIView):
         except Exception:
             return Response({"error": "Invalid reset link"}, status=400)
 
-        # check token validity
         if not PasswordResetTokenGenerator().check_token(user, token):
             return Response({"error": "Invalid or expired token"}, status=400)
 
-        # update password
         user.set_password(new_password)
         user.save()
 

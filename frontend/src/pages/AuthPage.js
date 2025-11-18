@@ -3,9 +3,8 @@ import { login, signup, forgotPassword } from "../users_api";
 import "./AuthPage.css";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/sql-logo.webp";
+
 const LOGO_FALLBACK = "/logo192.png";
-
-
 
 export default function AuthPage({ onLogin }) {
   const navigate = useNavigate();
@@ -29,7 +28,9 @@ export default function AuthPage({ onLogin }) {
       if (res.success) {
         alert("Password reset link sent!");
         setForgotMode(false);
-      } else setError(res.error || "Unable to send reset link");
+      } else {
+        setError(res.error || "Unable to send reset link");
+      }
       return;
     }
 
@@ -46,28 +47,35 @@ export default function AuthPage({ onLogin }) {
         setError("Login failed. Check network/console for details.");
       }
       return;
-}
+    }
 
+    if (!name.trim()) {
+      setError("Name is required");
+      return;
+    }
 
-    if (!name.trim()) return setError("Name is required");
-    if (password !== confirm) return setError("Passwords do not match");
+    if (password !== confirm) {
+      setError("Passwords do not match");
+      return;
+    }
 
     const res = await signup(name, email, password);
     if (res.success) {
       alert("Signup successful!");
       setIsLogin(true);
-    } else setError(res.error || "Signup failed");
+    } else {
+      setError(res.error || "Signup failed");
+    }
   }
 
   return (
     <div className="auth-container">
-        <div className="auth-left">
+      <div className="auth-left">
         <img
           src={logo}
           alt="Logo"
           className="auth-logo"
           onError={(e) => {
-            // fallback to public asset if bundled image fails to load
             e.currentTarget.onerror = null;
             e.currentTarget.src = LOGO_FALLBACK;
           }}

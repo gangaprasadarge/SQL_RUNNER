@@ -2,7 +2,6 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import { BrowserRouter, Routes, Route, useParams } from "react-router-dom";
-
 import AuthPage from "./pages/AuthPage";
 import ResetPassword from "./pages/ResetPassword";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -11,7 +10,6 @@ function ResetWrapper() {
   const { uid, token } = useParams();
   return <ResetPassword uid={uid} token={token} />;
 }
-
 
 function LoginWrapper() {
   function handleLogin(access, refresh) {

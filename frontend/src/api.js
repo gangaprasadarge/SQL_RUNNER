@@ -33,7 +33,6 @@ export async function refreshToken() {
 async function handle401(originalRequest) {
   const newToken = await refreshToken();
   if (newToken) return originalRequest();
-
   localStorage.removeItem("token");
   localStorage.removeItem("refresh");
   window.location.href = "/login";

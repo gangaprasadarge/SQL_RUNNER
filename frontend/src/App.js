@@ -28,7 +28,6 @@ export default function App() {
   function handleLogin(access, refresh) {
     localStorage.setItem("token", access);
     localStorage.setItem("refresh", refresh);
-    // clear previous session state (editor, history, results)
     setQuery("");
     setHistory([]);
     setResult(null);
@@ -38,7 +37,6 @@ export default function App() {
   function logout() {
     localStorage.removeItem("token");
     localStorage.removeItem("refresh");
-    // clear UI state on logout
     setToken(null);
     setQuery("");
     setHistory([]);
@@ -66,16 +64,13 @@ export default function App() {
   async function onRun() {
     setLoading(true);
     setError(null);
-
     const r = await runQuery(query);
-
     if (r.error) {
       setError(r.error);
     } else {
       setResult(r);
       if (!history.includes(query)) setHistory([query, ...history]);
     }
-
     setLoading(false);
   }
 

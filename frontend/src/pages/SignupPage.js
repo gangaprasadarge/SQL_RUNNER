@@ -31,13 +31,11 @@ export default function SignupPage({ onSignupSuccess }) {
   return (
     <div className="auth-wrapper">
       <div className="auth-card">
-
         <h2>Create Account</h2>
 
         {error && <p className="auth-error">{error}</p>}
 
         <form onSubmit={handleSignup}>
-
           <input
             type="text"
             placeholder="Full Name"
@@ -74,8 +72,7 @@ export default function SignupPage({ onSignupSuccess }) {
         </form>
 
         <p className="toggle-text">
-          Already have an account?{" "}
-          <span onClick={onSignupSuccess}>Login</span>
+          Already have an account? <span onClick={onSignupSuccess}>Login</span>
         </p>
       </div>
     </div>
