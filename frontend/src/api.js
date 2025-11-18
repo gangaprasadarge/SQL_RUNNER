@@ -1,4 +1,5 @@
-const API_BASE = process.env.REACT_APP_API_BASE;
+// const API_BASE = process.env.REACT_APP_API_BASE;
+const API_BASE = "https://sql-runner-backend-tr4a.onrender.com/api";
 // const API_BASE = "http://localhost:8000/api";
 
 function authHeader() {
