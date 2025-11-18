@@ -3,6 +3,7 @@ from pathlib import Path
 
 from django.http import JsonResponse
 from django.contrib.auth.models import User
+from django.contrib.auth import authenticate
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 
@@ -10,11 +11,14 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .serializers import RegisterSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
+
+from rest_framework import serializers
 
 
-
-
+# ==========================
+#   DATABASE CONNECTION
+# ==========================
 
 DB_PATH = Path(__file__).resolve().parent.parent / "sql_runner.db"
 
@@ -24,6 +28,76 @@ def get_conn():
     conn.row_factory = sqlite3.Row
     return conn
 
+
+# ==========================
+#   LOGIN API
+# ==========================
+
+@api_view(["POST"])
+def login(request):
+    email = request.data.get("email")
+    password = request.data.get("password")
+
+    if not email or not password:
+        return Response({"error": "Email and password required"}, status=400)
+
+    # Django auth: username = email
+    user = authenticate(username=email, password=password)
+
+    if user is None:
+        return Response({"error": "Invalid email or password"}, status=400)
+
+    refresh = RefreshToken.for_user(user)
+
+    return Response({
+        "access": str(refresh.access_token),
+        "refresh": str(refresh),
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email
+        }
+    })
+
+
+# ==========================
+#   SIGNUP API
+# ==========================
+
+class SignupSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+    password2 = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = ("username", "email", "password", "password2")
+
+    def validate(self, data):
+        if data["password"] != data["password2"]:
+            raise serializers.ValidationError("Passwords do not match")
+        return data
+
+    def create(self, validated_data):
+        validated_data.pop("password2")
+        return User.objects.create_user(
+            username=validated_data["username"],
+            email=validated_data["email"],
+            password=validated_data["password"]
+        )
+
+
+@api_view(["POST"])
+def signup(request):
+    serializer = SignupSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response({"success": True}, status=201)
+    return Response(serializer.errors, status=400)
+
+
+# ==========================
+#   SQL RUNNER APIs
+# ==========================
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
@@ -61,7 +135,9 @@ def list_tables(request):
     try:
         conn = get_conn()
         cur = conn.cursor()
-        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+        cur.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+        )
         tables = [row[0] for row in cur.fetchall()]
         return JsonResponse({"tables": tables})
 
@@ -100,6 +176,10 @@ def table_info(request, table_name):
             pass
 
 
+# ==========================
+#   USER PROFILE
+# ==========================
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def user_profile(request):
@@ -111,12 +191,19 @@ def user_profile(request):
     })
 
 
+# ==========================
+#   HEALTH CHECK
+# ==========================
+
 @api_view(["GET"])
 def health(request):
     return JsonResponse({"status": "ok"})
 
 
-# TEMP USER CREATION (remove after first login)
+# ==========================
+#   TEMP USER CREATION (OPTIONAL)
+# ==========================
+
 @method_decorator(csrf_exempt, name='dispatch')
 class CreateTempUser(APIView):
     def post(self, request):
@@ -134,37 +221,3 @@ class CreateTempUser(APIView):
         )
 
         return Response({"success": True, "message": "Temp user created!"})
-
-
-from rest_framework import serializers
-
-class SignupSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
-    password2 = serializers.CharField(write_only=True)
-
-    class Meta:
-        model = User
-        fields = ("username", "email", "password", "password2")
-
-    def validate(self, data):
-        if data["password"] != data["password2"]:
-            raise serializers.ValidationError("Passwords do not match")
-        return data
-
-    def create(self, validated_data):
-        validated_data.pop("password2")
-        user = User.objects.create_user(
-            username=validated_data["username"],
-            email=validated_data["email"],
-            password=validated_data["password"]
-        )
-        return user
-
-
-@api_view(["POST"])
-def signup(request):
-    serializer = SignupSerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response({"success": True}, status=201)
-    return Response(serializer.errors, status=400)

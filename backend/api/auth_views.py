@@ -9,6 +9,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.conf import settings
 
 
+# -------------------------
+# SIGNUP
+# -------------------------
 class SignupView(APIView):
     def post(self, request):
         name = request.data.get("name")
@@ -22,7 +25,7 @@ class SignupView(APIView):
             return Response({"error": "Email already registered"}, status=400)
 
         user = User.objects.create_user(
-            username=email,
+            username=email,       # important!
             email=email,
             password=password,
             first_name=name
@@ -31,6 +34,9 @@ class SignupView(APIView):
         return Response({"success": True, "id": user.id}, status=201)
 
 
+# -------------------------
+# LOGIN
+# -------------------------
 class LoginView(APIView):
     def post(self, request):
         email = request.data.get("email")
@@ -60,29 +66,38 @@ class LoginView(APIView):
         }, status=200)
 
 
+# -------------------------
+# FORGOT PASSWORD
+# -------------------------
 class ForgotPasswordView(APIView):
     def post(self, request):
         email = request.data.get("email")
 
         user = User.objects.filter(email=email).first()
         if not user:
+            # return success even if user doesn't exist (security)
             return Response({"success": True})
 
         token = PasswordResetTokenGenerator().make_token(user)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
+
+        # FRONTEND_URL must be set in Render Environment vars
         reset_link = f"{settings.FRONTEND_URL}/reset-password/{uid}/{token}"
 
         send_mail(
-            "Reset Password",
-            f"Click below to reset your password:\n\n{reset_link}\n\nIf you didn't request this, ignore the email.",
-            settings.DEFAULT_FROM_EMAIL,
-            [email],
+            subject="Reset Your Password",
+            message=f"Click the link below to reset your password:\n\n{reset_link}\n\nIf you didn't request this, ignore the email.",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],
             fail_silently=True,
         )
 
         return Response({"success": True})
 
 
+# -------------------------
+# RESET PASSWORD
+# -------------------------
 class ResetPasswordView(APIView):
     def post(self, request, uidb64, token):
         new_password = request.data.get("new_password")
