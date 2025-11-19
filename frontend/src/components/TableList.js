@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { getTables, getTableInfo } from "../api";
+import { fetchTables } from "../api";
 
 export default function TableList({ onSelectTable }) {
   const [tables, setTables] = useState([]);
 
   async function loadTables() {
-    const res = await getTables();
-    if (res.status === 200 && res.data && res.data.tables) {
-      setTables(res.data.tables);
+    const res = await fetchTables();
+
+    if (res && res.tables) {
+      setTables(res.tables);
     } else {
       setTables([]);
       console.error("Failed to load tables", res);
