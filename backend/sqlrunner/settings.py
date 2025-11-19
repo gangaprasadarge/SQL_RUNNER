@@ -1,6 +1,7 @@
 from pathlib import Path
 from datetime import timedelta
 import os
+
 import dj_database_url # Import the dj_database_url library
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -104,13 +105,17 @@ WSGI_APPLICATION = 'sqlrunner.wsgi.application'
 
 # Database configuration: Use PostgreSQL in production (via DATABASE_URL env var)
 # and SQLite for local development if DATABASE_URL is not set.
+
+
+
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.environ.get("DATABASE_URL", f"sqlite:///{BASE_DIR / 'db.sqlite3'}"), # Fallback to sqlite, using Path for robustness
-        conn_max_age=600, # Optional: controls how long database connections are kept open
-        conn_health_checks=True, # Optional: checks connection health before reuse
+        default=os.environ.get("DATABASE_URL"),
+        conn_max_age=600,
+        conn_health_checks=True
     )
 }
+
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
