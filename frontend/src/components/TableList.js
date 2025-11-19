@@ -26,12 +26,13 @@ export default function TableList({ onSelect, selected }) {
     <div className="table-list">
       {tables.map((t) => (
         <button
-          key={t}
-          className={`table-btn ${selected === t ? "active" : ""}`}
-          onClick={() => onSelect(t)}   // ✅ correct callback
-        >
-          {t}
-        </button>
+  key={t}
+  className={`table-btn ${selected === t ? "active-table" : ""}`}
+  onClick={() => onSelectTable(t)}
+>
+  {t}
+</button>
+
       ))}
     </div>
   );

@@ -31,9 +31,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // ---------------------------------------------
   // LOGIN
-  // ---------------------------------------------
   function handleLogin(access, refresh) {
     localStorage.setItem("token", access);
     localStorage.setItem("refresh", refresh);
@@ -42,9 +40,7 @@ export default function App() {
     setHistory([]);
   }
 
-  // ---------------------------------------------
   // LOGOUT
-  // ---------------------------------------------
   function logout() {
     localStorage.removeItem("token");
     localStorage.removeItem("refresh");
@@ -55,9 +51,7 @@ export default function App() {
     setProfile(null);
   }
 
-  // ---------------------------------------------
-  // LOAD PROFILE + TABLES AFTER LOGIN
-  // ---------------------------------------------
+  // LOAD PROFILE + TABLES
   useEffect(() => {
     if (token) {
       loadProfile();
@@ -69,64 +63,56 @@ export default function App() {
     try {
       const p = await apiGetProfile();
       if (p && !p.error) setProfile(p);
-    } catch (err) {
-      console.error("Profile load error:", err);
-    }
+    } catch {}
   }
 
-  // ---------------------------------------------
-  // LOAD TABLES (ONLY 3 TABLES)
-  // ---------------------------------------------
+  // LOAD ONLY 3 MAIN TABLES
   async function loadTables() {
     try {
       const r = await apiFetchTables();
-
       if (r && r.tables) {
         const allowed = ["customers", "orders", "shippings"];
-
-        const filtered = r.tables.filter((t) => allowed.includes(t.toLowerCase()));
-
+        const filtered = r.tables.filter((t) =>
+          allowed.includes(t.toLowerCase())
+        );
         setTables(filtered);
 
         if (filtered.length) {
-          const first = filtered[0];
-          setSelectedTable(first);
-          await loadTableInfo(first);
+          setSelectedTable(filtered[0]);
+          await loadTableInfo(filtered[0]);
         }
       }
-    } catch (err) {
-      console.error("Table load error:", err);
-    }
+    } catch {}
   }
 
-  // ---------------------------------------------
-  // LOAD SCHEMA + SAMPLE ROWS FOR TABLE
-  // ---------------------------------------------
+  // LOAD SCHEMA + SAMPLE ROWS
   async function loadTableInfo(name) {
     try {
       const info = await apiFetchTableInfo(name);
-      if (!info.error) {
-        setTableInfo(info);
-      }
-    } catch (err) {
-      console.error("Table info error:", err);
-    }
+      if (!info.error) setTableInfo(info);
+    } catch {}
   }
 
-  // ---------------------------------------------
-  // RUN QUERY
-  // ---------------------------------------------
+  // RUN QUERY — NOW CHECKS FOR ";" AT END
   async function onRun() {
     setLoading(true);
     setError(null);
     setResult(null);
 
+    // 🔴 DO NOT EXECUTE IF QUERY DOES NOT END WITH ";"
+    if (!query.trim().endsWith(";")) {
+      setError("✖ Add ';' at the end of your SQL query.");
+      setLoading(false);
+      return;
+    }
+
     try {
       const r = await apiRunQuery(query);
-
       if (r.error) setError(r.error);
-      else setResult(r);
-
+      else {
+        setResult(r);
+        if (!history.includes(query)) setHistory([query, ...history].slice(0, 30));
+      }
     } catch (err) {
       setError(String(err));
     }
@@ -134,18 +120,14 @@ export default function App() {
     setLoading(false);
   }
 
-  // ---------------------------------------------
-  // WHEN USER SELECTS A TABLE
-  // ---------------------------------------------
+  // SELECT TABLE
   async function onSelectTable(name) {
     setSelectedTable(name);
     await loadTableInfo(name);
-    setQuery(`SELECT * FROM "${name}" LIMIT 100;`);
+    setQuery();
   }
 
-  // ---------------------------------------------
-  // DRAG RESIZERS
-  // ---------------------------------------------
+  // PANEL DRAGGING
   const startLeftDrag = () => setDraggingLeft(true);
   const startRightDrag = () => setDraggingRight(true);
 
@@ -174,14 +156,8 @@ export default function App() {
     };
   }, [handleMove, stopDrag]);
 
-  // ---------------------------------------------
-  // NOT LOGGED IN → SHOW LOGIN PAGE
-  // ---------------------------------------------
   if (!token) return <AuthPage onLogin={handleLogin} />;
 
-  // ---------------------------------------------
-  // MAIN UI
-  // ---------------------------------------------
   return (
     <div className="layout">
       {/* LEFT SIDEBAR */}
@@ -208,7 +184,7 @@ export default function App() {
 
       <div className="drag-divider" onMouseDown={startLeftDrag}></div>
 
-      {/* CENTER AREA */}
+      {/* CENTER */}
       <div className="center">
         <div className="editor-card">
           <div className="card-title">SQL Editor</div>
