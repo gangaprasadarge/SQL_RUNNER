@@ -1,43 +1,53 @@
-const API_BASE = process.env.REACT_APP_API_BASE || "https://sql-runner-backend-tr4a.onrender.com/api";
+const API_BASE = process.env.REACT_APP_API_URL;
 
 function authHeader() {
-  const token = localStorage.getItem("token");
-  if (!token) return {};
-  return { "Authorization": `Bearer ${token}` };
+  return {
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  };
+}
+
+async function request(url, method = "GET", body = null) {
+  const options = {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeader(),
+    },
+  };
+  if (body) options.body = JSON.stringify(body);
+
+  const res = await fetch(`${API_BASE}${url}`, options);
+
+  if (res.status === 401) {
+    localStorage.removeItem("token");
+    localStorage.removeItem("refresh");
+    window.location.href = "/login";
+    return;
+  }
+
+  return res.json();
+}
+
+export async function login(data) {
+  return request("/login/", "POST", data);
+}
+
+export async function signup(data) {
+  return request("/signup/", "POST", data);
 }
 
 export async function runQuery(query) {
-  const request = () => fetch(`${API_BASE}/run-query/`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...authHeader()
-    },
-    body: JSON.stringify({ query })
-  });
-  const res = await request();
-  const data = await res.json();
-  return { status: res.status, data };
+  return request("/run-query/", "POST", { query });
 }
 
-export async function getTables() {
-  const res = await fetch(`${API_BASE}/list-tables/`, {
-    method: "GET",
-    headers: {
-      ...authHeader()
-    }
-  });
-  const data = await res.json();
-  return { status: res.status, data };
+export async function listTables() {
+  return request("/list-tables/", "GET");
 }
 
-export async function getTableInfo(tableName) {
-  const res = await fetch(`${API_BASE}/table-info/${encodeURIComponent(tableName)}/`, {
-    method: "GET",
-    headers: {
-      ...authHeader()
-    }
-  });
-  const data = await res.json();
-  return { status: res.status, data };
+export async function tableInfo(table) {
+  return request(`/table-info/${table}/`, "GET");
+}
+
+export async function getProfile() {
+  return request("/profile/", "GET");
 }
