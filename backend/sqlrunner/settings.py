@@ -40,8 +40,10 @@ CORS_ALLOW_CREDENTIALS = True
 # CSRF_TRUSTED_ORIGINS should include your frontend URL and potentially other domains if you're sending forms from them.
 # Using a wildcard for subdomains of onrender.com is common for Render deployments.
 CSRF_TRUSTED_ORIGINS = [
-    "https://*.onrender.com"
+    "https://sql-runner-backend-tr4a.onrender.com",
+    "https://sql-runner-23g4.onrender.com",
 ]
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -107,10 +109,9 @@ WSGI_APPLICATION = 'sqlrunner.wsgi.application'
 # and SQLite for local development if DATABASE_URL is not set.
 
 
-
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.environ.get("DATABASE_URL"),
+        default=os.environ.get("DATABASE_URL", f"sqlite:///{BASE_DIR / 'db.sqlite3'}"),
         conn_max_age=600,
         conn_health_checks=True
     )
