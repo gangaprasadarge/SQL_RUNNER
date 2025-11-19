@@ -1,5 +1,4 @@
 const API_BASE = "https://sql-runner-backend-tr4a.onrender.com/api";
-// const API_BASE = "http://localhost:8000/api";
 
 export async function signup(name, email, password) {
   const res = await fetch(`${API_BASE}/signup/`, {

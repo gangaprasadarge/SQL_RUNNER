@@ -1,12 +1,10 @@
 import React, { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { resetPassword } from "../users_api";
 import "./AuthPage.css";
 
-export default function ResetPassword() {
-  const { uid, token } = useParams();
+export default function ResetPassword({ uid, token }) {
   const navigate = useNavigate();
-
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
@@ -17,7 +15,7 @@ export default function ResetPassword() {
 
     if (res.success) {
       setMsg("Password updated! Redirecting to login...");
-      setTimeout(() => navigate("/"), 1500);
+      setTimeout(() => navigate("/login"), 1500);
     } else {
       setError(res.error || "Failed to reset password");
     }

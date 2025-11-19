@@ -1,4 +1,3 @@
-// src/App.js
 import "./App.css";
 import React, { useEffect, useState, useCallback } from "react";
 import QueryEditor from "./components/QueryEditor";
@@ -12,6 +11,8 @@ import {
 } from "./api";
 import SchemaTable from "./components/SchemaTable";
 import AuthPage from "./pages/AuthPage";
+
+<Route path="/reset-password/:uid/:token" element={<ResetPasswordPage />} />
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem("token"));
@@ -31,7 +32,6 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // LOGIN
   function handleLogin(access, refresh) {
     localStorage.setItem("token", access);
     localStorage.setItem("refresh", refresh);
@@ -40,7 +40,6 @@ export default function App() {
     setHistory([]);
   }
 
-  // LOGOUT
   function logout() {
     localStorage.removeItem("token");
     localStorage.removeItem("refresh");
@@ -51,7 +50,6 @@ export default function App() {
     setProfile(null);
   }
 
-  // LOAD PROFILE + TABLES
   useEffect(() => {
     if (token) {
       loadProfile();
@@ -66,28 +64,25 @@ export default function App() {
     } catch {}
   }
 
-  // LOAD ONLY 3 MAIN TABLES
   async function loadTables() {
-  try {
-    const r = await apiFetchTables();
+    try {
+      const r = await apiFetchTables();
 
-    if (r && r.tables) {
-      const allowed = ["customers", "orders", "shippings"];
-      const filtered = r.tables.filter((t) =>
-        allowed.includes(t.toLowerCase())
-      );
+      if (r && r.tables) {
+        const allowed = ["customers", "orders", "shippings"];
+        const filtered = r.tables.filter((t) =>
+          allowed.includes(t.toLowerCase())
+        );
 
-      setTables(filtered);
-      setSelectedTable(null);
-      setTableInfo(null);
+        setTables(filtered);
+        setSelectedTable(null);
+        setTableInfo(null);
+      }
+    } catch (err) {
+      console.error("Table load error:", err);
     }
-  } catch (err) {
-    console.error("Table load error:", err);
   }
-}
 
-
-  // LOAD SCHEMA + SAMPLE ROWS
   async function loadTableInfo(name) {
     try {
       const info = await apiFetchTableInfo(name);
@@ -95,15 +90,13 @@ export default function App() {
     } catch {}
   }
 
-  // RUN QUERY — NOW CHECKS FOR ";" AT END
   async function onRun() {
     setLoading(true);
     setError(null);
     setResult(null);
 
-    // 🔴 DO NOT EXECUTE IF QUERY DOES NOT END WITH ";"
     if (!query.trim().endsWith(";")) {
-      setError("✖ Add ';' at the end of your SQL query.");
+      setError("Add ';' at the end of your SQL query.");
       setLoading(false);
       return;
     }
@@ -122,14 +115,12 @@ export default function App() {
     setLoading(false);
   }
 
-  // SELECT TABLE
   async function onSelectTable(name) {
     setSelectedTable(name);
     await loadTableInfo(name);
     setQuery();
   }
 
-  // PANEL DRAGGING
   const startLeftDrag = () => setDraggingLeft(true);
   const startRightDrag = () => setDraggingRight(true);
 
@@ -159,13 +150,11 @@ export default function App() {
   }, [handleMove, stopDrag]);
 
   if (!token || token === "null" || token === "undefined") {
-  return <AuthPage onLogin={handleLogin} />;
-}
-
+    return <AuthPage onLogin={handleLogin} />;
+  }
 
   return (
     <div className="layout">
-      {/* LEFT SIDEBAR */}
       <div className="sidebar" style={{ width: leftWidth }}>
         <h1 className="main-title">SQL Runner</h1>
         <div className="sub-title">Run SQL — Django + React</div>
@@ -189,7 +178,6 @@ export default function App() {
 
       <div className="drag-divider" onMouseDown={startLeftDrag}></div>
 
-      {/* CENTER */}
       <div className="center">
         <div className="editor-card">
           <div className="card-title">SQL Editor</div>
@@ -206,7 +194,6 @@ export default function App() {
 
       <div className="drag-divider" onMouseDown={startRightDrag}></div>
 
-      {/* SCHEMA PANEL */}
       <div className="schema-panel" style={{ width: rightWidth }}>
         <div className="schema-title">{selectedTable || "No table selected"}</div>
         <div className="schema-sub">Schema</div>
