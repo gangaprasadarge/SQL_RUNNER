@@ -8,7 +8,14 @@ export default function TableList({ onSelectTable }) {
     const res = await fetchTables();
 
     if (res && res.tables) {
-      setTables(res.tables);
+      // show only these tables
+      const allowedTables = ["customers", "orders", "shippings"];
+
+      const filtered = res.tables.filter((t) =>
+        allowedTables.includes(t.toLowerCase())
+      );
+
+      setTables(filtered);
     } else {
       setTables([]);
       console.error("Failed to load tables", res);

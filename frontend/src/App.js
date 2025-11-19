@@ -31,30 +31,33 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // called after successful login
+  // ---------------------------------------------
+  // LOGIN
+  // ---------------------------------------------
   function handleLogin(access, refresh) {
     localStorage.setItem("token", access);
     localStorage.setItem("refresh", refresh);
+    setToken(access);
     setQuery("");
     setHistory([]);
-    setResult(null);
-    setToken(access);
   }
 
+  // ---------------------------------------------
+  // LOGOUT
+  // ---------------------------------------------
   function logout() {
     localStorage.removeItem("token");
     localStorage.removeItem("refresh");
     setToken(null);
-    setQuery("");
-    setHistory([]);
-    setResult(null);
-    setProfile(null);
     setTables([]);
     setSelectedTable(null);
     setTableInfo(null);
+    setProfile(null);
   }
 
-  // load tables + profile whenever token is available
+  // ---------------------------------------------
+  // LOAD PROFILE + TABLES AFTER LOGIN
+  // ---------------------------------------------
   useEffect(() => {
     if (token) {
       loadProfile();
@@ -62,110 +65,87 @@ export default function App() {
     }
   }, [token]);
 
-  // load profile (safe/robust)
   async function loadProfile() {
     try {
       const p = await apiGetProfile();
-      // apiGetProfile should return an object like { username:..., email:..., id:... }
-      if (p && !p.error) {
-        setProfile(p);
-      } else {
-        // If token expired / unauthorized, force logout
-        if (p && p.detail === "Authentication credentials were not provided.") {
-          logout();
-        }
-      }
+      if (p && !p.error) setProfile(p);
     } catch (err) {
-      // don't crash app on profile load error
-      console.error("loadProfile error:", err);
+      console.error("Profile load error:", err);
     }
   }
 
-  // load tables and auto-select first table
+  // ---------------------------------------------
+  // LOAD TABLES (ONLY 3 TABLES)
+  // ---------------------------------------------
   async function loadTables() {
-    setError(null);
     try {
       const r = await apiFetchTables();
+
       if (r && r.tables) {
-        setTables(r.tables);
-        // if there's no selected table or selected not in list, pick first
-        if (!selectedTable || !r.tables.includes(selectedTable)) {
-          const first = r.tables.length ? r.tables[0] : null;
+        const allowed = ["customers", "orders", "shippings"];
+
+        const filtered = r.tables.filter((t) => allowed.includes(t.toLowerCase()));
+
+        setTables(filtered);
+
+        if (filtered.length) {
+          const first = filtered[0];
           setSelectedTable(first);
-          if (first) {
-            // fetch its info
-            await loadTableInfo(first);
-          } else {
-            setTableInfo(null);
-          }
-        } else {
-          // refresh info for existing selected table
-          await loadTableInfo(selectedTable);
+          await loadTableInfo(first);
         }
-      } else if (r && r.error) {
-        setError(r.error);
-      } else {
-        setTables([]);
       }
     } catch (err) {
-      console.error("loadTables error:", err);
-      setError(String(err));
+      console.error("Table load error:", err);
     }
   }
 
-  // fetch schema + sample rows for a table
+  // ---------------------------------------------
+  // LOAD SCHEMA + SAMPLE ROWS FOR TABLE
+  // ---------------------------------------------
   async function loadTableInfo(name) {
-    if (!name) return;
-    setError(null);
-    setTableInfo(null);
     try {
       const info = await apiFetchTableInfo(name);
-      if (info && !info.error) {
+      if (!info.error) {
         setTableInfo(info);
-      } else if (info && info.error) {
-        setError(info.error);
-      } else {
-        setTableInfo(null);
       }
     } catch (err) {
-      console.error("loadTableInfo error:", err);
-      setError(String(err));
+      console.error("Table info error:", err);
     }
   }
 
-  // triggered by user pressing Run
+  // ---------------------------------------------
+  // RUN QUERY
+  // ---------------------------------------------
   async function onRun() {
     setLoading(true);
     setError(null);
     setResult(null);
+
     try {
       const r = await apiRunQuery(query);
-      if (!r) {
-        setError("No response from server");
-      } else if (r.error) {
-        setError(r.error);
-      } else {
-        // r may contain { columns, rows } or { message, rows_affected }
-        setResult(r);
-        if (query && !history.includes(query)) setHistory([query, ...history].slice(0, 30));
-      }
+
+      if (r.error) setError(r.error);
+      else setResult(r);
+
     } catch (err) {
-      console.error("onRun error:", err);
       setError(String(err));
-    } finally {
-      setLoading(false);
     }
+
+    setLoading(false);
   }
 
-  // user selects a table from the left list
+  // ---------------------------------------------
+  // WHEN USER SELECTS A TABLE
+  // ---------------------------------------------
   async function onSelectTable(name) {
     setSelectedTable(name);
     await loadTableInfo(name);
-    // optionally set editor example query
     setQuery(`SELECT * FROM "${name}" LIMIT 100;`);
   }
 
-  // drag handlers for resizing panels
+  // ---------------------------------------------
+  // DRAG RESIZERS
+  // ---------------------------------------------
   const startLeftDrag = () => setDraggingLeft(true);
   const startRightDrag = () => setDraggingRight(true);
 
@@ -194,11 +174,17 @@ export default function App() {
     };
   }, [handleMove, stopDrag]);
 
-  // if not logged in, show auth page
+  // ---------------------------------------------
+  // NOT LOGGED IN → SHOW LOGIN PAGE
+  // ---------------------------------------------
   if (!token) return <AuthPage onLogin={handleLogin} />;
 
+  // ---------------------------------------------
+  // MAIN UI
+  // ---------------------------------------------
   return (
     <div className="layout">
+      {/* LEFT SIDEBAR */}
       <div className="sidebar" style={{ width: leftWidth }}>
         <h1 className="main-title">SQL Runner</h1>
         <div className="sub-title">Run SQL — Django + React</div>
@@ -215,19 +201,14 @@ export default function App() {
         </ul>
 
         <div className="sidebar-bottom">
-          {profile && (
-            <div className="user-info">
-              <span className="email">{profile.username || profile.email}</span>
-            </div>
-          )}
-          <button className="logout-btn" onClick={logout}>
-            Logout
-          </button>
+          {profile && <div className="user-info"><span className="email">{profile.username}</span></div>}
+          <button className="logout-btn" onClick={logout}>Logout</button>
         </div>
       </div>
 
       <div className="drag-divider" onMouseDown={startLeftDrag}></div>
 
+      {/* CENTER AREA */}
       <div className="center">
         <div className="editor-card">
           <div className="card-title">SQL Editor</div>
@@ -244,12 +225,20 @@ export default function App() {
 
       <div className="drag-divider" onMouseDown={startRightDrag}></div>
 
+      {/* SCHEMA PANEL */}
       <div className="schema-panel" style={{ width: rightWidth }}>
         <div className="schema-title">{selectedTable || "No table selected"}</div>
         <div className="schema-sub">Schema</div>
 
         <div className="schema-box">
-          {tableInfo ? <SchemaTable columns={tableInfo.columns} sampleRows={tableInfo.sample_rows} /> : "Select a table to view schema"}
+          {tableInfo ? (
+            <SchemaTable
+              columns={tableInfo.columns}
+              sampleRows={tableInfo.sample_rows}
+            />
+          ) : (
+            "Select a table to view schema"
+          )}
         </div>
       </div>
     </div>
