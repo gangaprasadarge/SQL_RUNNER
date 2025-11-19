@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { fetchTables } from "../api";
 
-export default function TableList({ onSelect }) {
-  const [tables, setTables] = useState([]);
+export default function TableList({ tables, selected, onSelect }) {
+  const [filteredTables, setFilteredTables] = useState([]);
+
+  useEffect(() => {
+    loadTables();
+  }, []);
 
   async function loadTables() {
     try {
@@ -10,29 +14,25 @@ export default function TableList({ onSelect }) {
 
       if (res && res.tables) {
         const allowed = ["customers", "orders", "shippings"];
-        const filtered = res.tables.filter((t) =>
+
+        const cleaned = res.tables.filter((t) =>
           allowed.includes(t.toLowerCase())
         );
-        setTables(filtered);
-      } else {
-        setTables([]);
+
+        setFilteredTables(cleaned);
       }
     } catch (err) {
-      console.error("Error loading tables", err);
+      console.error("Failed to load tables:", err);
     }
   }
 
-  useEffect(() => {
-    loadTables();
-  }, []);
-
   return (
     <div className="table-list">
-      {tables.map((t) => (
+      {filteredTables.map((t) => (
         <button
           key={t}
-          className="table-btn"
-          onClick={() => onSelect(t)}   {/* FIXED HERE */}
+          className={`table-btn ${selected === t ? "active" : ""}`}
+          onClick={() => onSelect(t)}
         >
           {t}
         </button>
