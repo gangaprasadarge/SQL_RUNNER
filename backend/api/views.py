@@ -1,216 +1,135 @@
-import sqlite3
-from pathlib import Path
-
+import psycopg2
 from django.http import JsonResponse
-from django.contrib.auth.models import User
-from django.contrib.auth import authenticate
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
-
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from django.conf import settings
+import dj_database_url
 
 
-# ==========================
-#   DATABASE CONNECTION
-# ==========================
+# ======================================
+# PostgreSQL CONNECTION
+# ======================================
 
-DB_PATH = Path(__file__).resolve().parent.parent / "sql_runner.db"
+def get_pg_connection():
+    db = dj_database_url.parse(settings.DATABASES['default']['NAME'])
 
-
-def get_conn():
-    conn = sqlite3.connect(str(DB_PATH))
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
-# ==========================
-#   LOGIN API
-# ==========================
-
-@api_view(["POST"])
-@permission_classes([AllowAny])
-def login(request):
-    email = request.data.get("email")
-    password = request.data.get("password")
-
-    if not email or not password:
-        return Response({"error": "Email and password required"}, status=400)
-
-    if not User.objects.filter(username=email).exists():
-        return Response({"error": "Invalid email or password"}, status=400)
-
-    user = authenticate(username=email, password=password)
-
-    if user is None:
-        return Response({"error": "Invalid email or password"}, status=400)
-
-    refresh = RefreshToken.for_user(user)
-
-    return Response({
-        "access": str(refresh.access_token),
-        "refresh": str(refresh),
-        "user": {
-            "id": user.id,
-            "username": user.username,
-            "email": user.email
-        }
-    })
-
-
-# ==========================
-#   SIGNUP API (FIXED)
-# ==========================
-
-@api_view(["POST"])
-@permission_classes([AllowAny])
-def signup(request):
-    name = request.data.get("name")
-    email = request.data.get("email")
-    password = request.data.get("password")
-
-    if not name or not email or not password:
-        return Response({"error": "All fields are required"}, status=400)
-
-    if User.objects.filter(username=email).exists():
-        return Response({"error": "Email already registered"}, status=400)
-
-    user = User.objects.create_user(
-        username=email,
-        email=email,
-        password=password,
-        first_name=name
+    return psycopg2.connect(
+        dbname=db['dbname'],
+        user=db['user'],
+        password=db['password'],
+        host=db['host'],
+        port=db['port'],
+        sslmode="require"
     )
 
-    return Response({"success": True, "message": "Account created successfully!"}, status=201)
 
-
-# ==========================
-#   SQL RUNNER APIs
-# ==========================
-
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def run_query(request):
-    query = request.data.get("query", "")
-    if not query.strip():
-        return JsonResponse({"error": "empty query"}, status=400)
-
-    try:
-        conn = get_conn()
-        cur = conn.cursor()
-        cur.execute(query)
-
-        if cur.description:
-            columns = [col[0] for col in cur.description]
-            rows = [dict(row) for row in cur.fetchall()]
-            return JsonResponse({"columns": columns, "rows": rows})
-
-        conn.commit()
-        return JsonResponse({"message": "Query executed", "rows_affected": cur.rowcount})
-
-    except sqlite3.Error as e:
-        return JsonResponse({"error": str(e)}, status=400)
-
-    finally:
-        try:
-            conn.close()
-        except:
-            pass
-
+# ======================================
+# LIST TABLES
+# ======================================
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def list_tables(request):
     try:
-        conn = get_conn()
+        conn = get_pg_connection()
         cur = conn.cursor()
-        cur.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
-        )
+
+        cur.execute("""
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_schema='public'
+        """)
+
         tables = [row[0] for row in cur.fetchall()]
+
+        cur.close()
+        conn.close()
+
         return JsonResponse({"tables": tables})
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
-    finally:
-        try:
-            conn.close()
-        except:
-            pass
 
+# ======================================
+# RUN SQL QUERY
+# ======================================
 
-@api_view(["GET"])
+@api_view(["POST"])
 @permission_classes([IsAuthenticated])
-def table_info(request, table_name):
+def run_query(request):
+    query = request.data.get("query", "")
+
+    if not query.strip():
+        return JsonResponse({"error": "Empty query"}, status=400)
+
     try:
-        conn = get_conn()
+        conn = get_pg_connection()
         cur = conn.cursor()
 
-        cur.execute(f"PRAGMA table_info({table_name})")
-        columns = [{"name": r[1], "type": r[2], "pk": r[5]} for r in cur.fetchall()]
+        cur.execute(query)
 
-        cur.execute(f"SELECT * FROM {table_name} LIMIT 5")
-        rows = [dict(row) for row in cur.fetchall()]
+        # Query returns rows
+        if cur.description:
+            columns = [c.name for c in cur.description]
+            rows = cur.fetchall()
 
-        return JsonResponse({"columns": columns, "sample_rows": rows})
+            result_rows = [
+                {columns[i]: row[i] for i in range(len(columns))}
+                for row in rows
+            ]
+
+            return JsonResponse({"columns": columns, "rows": result_rows})
+
+        else:
+            conn.commit()
+            return JsonResponse({"message": "Query executed."})
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)
 
     finally:
-        try:
-            conn.close()
-        except:
-            pass
+        cur.close()
+        conn.close()
 
 
-# ==========================
-#   USER PROFILE
-# ==========================
+# ======================================
+# TABLE INFO
+# ======================================
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-def user_profile(request):
-    user = request.user
-    return JsonResponse({
-        "username": user.username,
-        "email": user.email,
-        "id": user.id
-    })
+def table_info(request, table_name):
+    try:
+        conn = get_pg_connection()
+        cur = conn.cursor()
 
+        # Get columns
+        cur.execute(f"""
+            SELECT column_name, data_type 
+            FROM information_schema.columns 
+            WHERE table_name = %s
+        """, [table_name])
 
-# ==========================
-#   HEALTH CHECK
-# ==========================
+        columns = [{"name": c[0], "type": c[1]} for c in cur.fetchall()]
 
-@api_view(["GET"])
-def health(request):
-    return JsonResponse({"status": "ok"})
+        # Sample rows
+        cur.execute(f"SELECT * FROM {table_name} LIMIT 5")
+        rows = cur.fetchall()
 
+        sample_rows = []
+        col_names = [desc[0] for desc in cur.description]
 
-# ==========================
-#   CREATE TEMP USER
-# ==========================
+        for row in rows:
+            sample_rows.append(
+                {col_names[i]: row[i] for i in range(len(col_names))}
+            )
 
-@method_decorator(csrf_exempt, name='dispatch')
-class CreateTempUser(APIView):
-    def post(self, request):
-        email = "argegangaprasad9515@gmail.com"
-        password = "Test@12345"
+        return JsonResponse({"columns": columns, "sample_rows": sample_rows})
 
-        if User.objects.filter(username=email).exists():
-            return Response({"error": "User already exists"}, status=400)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
-        User.objects.create_user(
-            username=email,
-            email=email,
-            password=password,
-            first_name="Arge Gangaprasad",
-        )
-
-        return Response({"success": True, "message": "Temp user created!"})
+    finally:
+        cur.close()
+        conn.close()
