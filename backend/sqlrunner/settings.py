@@ -104,18 +104,9 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'sqlrunner.wsgi.application'
+FRONTEND_URL = os.environ.get("FRONTEND_URL")  
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL")
 
-# Database configuration: Use PostgreSQL in production (via DATABASE_URL env var)
-# and SQLite for local development if DATABASE_URL is not set.
-
-
-# DATABASES = {
-#     "default": dj_database_url.config(
-#         default=os.environ.get("DATABASE_URL"),
-#         conn_max_age=600,
-#         conn_health_checks=True
-#     )
-# }
 
 DATABASES = {
     'default': dj_database_url.config(
@@ -152,13 +143,24 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles") # Directory where 'collectst
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Email settings (ensure these are set securely via environment variables in production)
+# # Email settings (ensure these are set securely via environment variables in production)
+# EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+# EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
+# EMAIL_PORT = int(os.environ.get("EMAIL_PORT", 587))
+# EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True").lower() in ("true", "1", "yes")
+# EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "") # Set this in Render env vars for production
+# EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "") # Set this in Render env vars for production
+
+
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
-EMAIL_PORT = int(os.environ.get("EMAIL_PORT", 587))
-EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True").lower() in ("true", "1", "yes")
-EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "") # Set this in Render env vars for production
-EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "") # Set this in Render env vars for production
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
 
 # Logging configuration for better debugging in production
 LOGGING = {
