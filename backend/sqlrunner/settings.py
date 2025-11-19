@@ -108,7 +108,7 @@ DATABASES = {
     'default': dj_database_url.config(
         default=os.environ.get("DATABASE_URL", f"sqlite:///{BASE_DIR / 'db.sqlite3'}"), # Fallback to sqlite, using Path for robustness
         conn_max_age=600, # Optional: controls how long database connections are kept open
-        conn_health_check=True, # Optional: checks connection health before reuse
+        conn_health_checks=True, # Optional: checks connection health before reuse
     )
 }
 
