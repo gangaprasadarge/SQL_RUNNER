@@ -68,22 +68,24 @@ export default function App() {
 
   // LOAD ONLY 3 MAIN TABLES
   async function loadTables() {
-    try {
-      const r = await apiFetchTables();
-      if (r && r.tables) {
-        const allowed = ["customers", "orders", "shippings"];
-        const filtered = r.tables.filter((t) =>
-          allowed.includes(t.toLowerCase())
-        );
-        setTables(filtered);
+  try {
+    const r = await apiFetchTables();
 
-        if (filtered.length) {
-          setSelectedTable(filtered[0]);
-          await loadTableInfo(filtered[0]);
-        }
-      }
-    } catch {}
+    if (r && r.tables) {
+      const allowed = ["customers", "orders", "shippings"];
+      const filtered = r.tables.filter((t) =>
+        allowed.includes(t.toLowerCase())
+      );
+
+      setTables(filtered);
+      setSelectedTable(null);
+      setTableInfo(null);
+    }
+  } catch (err) {
+    console.error("Table load error:", err);
   }
+}
+
 
   // LOAD SCHEMA + SAMPLE ROWS
   async function loadTableInfo(name) {
@@ -156,7 +158,10 @@ export default function App() {
     };
   }, [handleMove, stopDrag]);
 
-  if (!token) return <AuthPage onLogin={handleLogin} />;
+  if (!token || token === "null" || token === "undefined") {
+  return <AuthPage onLogin={handleLogin} />;
+}
+
 
   return (
     <div className="layout">
