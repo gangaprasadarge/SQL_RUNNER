@@ -1,24 +1,19 @@
 from pathlib import Path
 from datetime import timedelta
 import os
+import dj_database_url 
 
-import dj_database_url # Import the dj_database_url library
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-# Get DJANGO_SECRET_KEY from environment variables for production
 SECRET_KEY = os.environ.get(
     "DJANGO_SECRET_KEY",
-    "django-insecure-4#)(g)hs5^mtgfk%9a6!2_wp+5q%nwis&l@&5qmjbklqomm0@g" # Fallback for local development, USE A STRONG KEY IN PROD ENV
+    "django-insecure-4#)(g)hs5^mtgfk%9a6!2_wp+5q%nwis&l@&5qmjbklqomm0@g" 
 )
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False # Keep this False for production
+
+DEBUG = False 
 
 FRONTEND_URL = "https://sql-runner-23g4.onrender.com"
 LOCAL_FRONTEND = "http://localhost:3000"
@@ -37,8 +32,7 @@ CORS_ALLOWED_ORIGINS = [
 
 CORS_ALLOW_CREDENTIALS = True
 
-# CSRF_TRUSTED_ORIGINS should include your frontend URL and potentially other domains if you're sending forms from them.
-# Using a wildcard for subdomains of onrender.com is common for Render deployments.
+
 CSRF_TRUSTED_ORIGINS = [
     "https://sql-runner-backend-tr4a.onrender.com",
     "https://sql-runner-23g4.onrender.com",
@@ -56,7 +50,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'api',
-    # Add any other apps your project uses here
+   
 ]
 
 REST_FRAMEWORK = {
@@ -71,7 +65,7 @@ SIMPLE_JWT = {
 }
 
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware", # Keep this at the very top
+    "corsheaders.middleware.CorsMiddleware", 
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -81,9 +75,9 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-# Ensure Django correctly identifies the connection as secure when behind a proxy like Render
+
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SECURE_SSL_REDIRECT = True # IMPORTANT: Ensures all HTTP traffic is redirected to HTTPS
+SECURE_SSL_REDIRECT = True 
 
 ROOT_URLCONF = 'sqlrunner.urls'
 
@@ -117,7 +111,7 @@ DATABASES = {
 }
 
 
-# ADD THIS LINE 👇
+
 DATABASES["default"]["URL"] = os.environ.get("DATABASE_URL")
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -139,7 +133,7 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles") # Directory where 'collectstatic' will gather static files
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles") 
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -162,21 +156,21 @@ EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 
-# Logging configuration for better debugging in production
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "handlers": {"console": {"class": "logging.StreamHandler"}},
-    "root": {"handlers": ["console"], "level": "INFO"}, # Set root logging level to INFO
+    "root": {"handlers": ["console"], "level": "INFO"},
     "loggers": {
         "django": {
             "handlers": ["console"],
-            "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"), # Allows overriding Django's log level via env var
+            "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"), 
             "propagate": False,
         },
         "corsheaders": {
             "handlers": ["console"],
-            "level": "DEBUG", # Often useful to debug CORS issues specifically
+            "level": "DEBUG", 
             "propagate": False,
         }
     }

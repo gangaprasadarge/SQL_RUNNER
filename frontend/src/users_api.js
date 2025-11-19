@@ -1,22 +1,9 @@
-// const API_BASE = process.env.REACT_APP_API_BASE;
-// REACT_APP_API_BASE=https://sql-runner-backend-tr4a.onrender.com/api
-// # REACT_APP_API_BASE=http://localhost:8000
-
-
-
-// const API_BASE = "http://localhost:8000/api";
-
-
-
 const API_BASE = "https://sql-runner-backend-tr4a.onrender.com/api";
-
 
 export async function login(email, password) {
   try {
-    // const res = await fetch("https://sql-runner-backend-tr4a.onrender.com/api/login/", {
     console.log("Sending request to:", `${API_BASE}/login/`);
     const res = await fetch(`${API_BASE}/login/`, {
-
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password })
@@ -36,8 +23,9 @@ export async function signup(name, email, password) {
     const res = await fetch(`${API_BASE}/signup/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ name, email, password })
     });
+
     const data = await res.json().catch(() => null);
     if (res.ok) return data || {};
     return { error: (data && (data.error || data.detail)) || `Request failed (${res.status})` };
@@ -51,8 +39,9 @@ export async function forgotPassword(email) {
     const res = await fetch(`${API_BASE}/forgot-password/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email })
     });
+
     const data = await res.json().catch(() => null);
     if (res.ok) return data || { success: true };
     return { error: (data && (data.error || data.detail)) || `Request failed (${res.status})` };
@@ -66,8 +55,9 @@ export async function resetPassword(uid, token, new_password) {
     const res = await fetch(`${API_BASE}/reset-password/${uid}/${token}/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ new_password }),
+      body: JSON.stringify({ new_password })
     });
+
     const data = await res.json().catch(() => null);
     if (res.ok) return data || { success: true };
     return { error: (data && (data.error || data.detail)) || `Request failed (${res.status})` };
@@ -83,7 +73,7 @@ export async function refreshToken() {
   const res = await fetch(`${API_BASE}/token/refresh/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refresh }),
+    body: JSON.stringify({ refresh })
   });
 
   const data = await res.json();

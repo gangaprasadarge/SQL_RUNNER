@@ -9,9 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.conf import settings
 
 
-# -------------------------
-# SIGNUP
-# -------------------------
+
 class SignupView(APIView):
     def post(self, request):
         name = request.data.get("name")
@@ -25,7 +23,7 @@ class SignupView(APIView):
             return Response({"error": "Email already registered"}, status=400)
 
         user = User.objects.create_user(
-            username=email,       # important!
+            username=email,      
             email=email,
             password=password,
             first_name=name
