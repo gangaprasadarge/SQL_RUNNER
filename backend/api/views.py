@@ -4,17 +4,19 @@ from django.http import JsonResponse
 from django.conf import settings
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
+import dj_database_url
 
 
 def get_pg_connection():
-    db_url = os.environ.get("DATABASE_URL")  # Render PostgreSQL URL
+    db_url = os.environ.get("DATABASE_URL")
+    config = dj_database_url.parse(db_url)
 
     conn = psycopg2.connect(
-        dbname=db_url.split("/")[-1],
-        user=db_url.split("//")[1].split(":")[0],
-        password=db_url.split(":")[2].split("@")[0],
-        host=db_url.split("@")[1].split(":")[0],
-        port=db_url.split(":")[-1].split("/")[0],
+        dbname=config["NAME"],
+        user=config["USER"],
+        password=config["PASSWORD"],
+        host=config["HOST"],
+        port=config["PORT"],
         sslmode="require"
     )
     return conn
@@ -26,14 +28,20 @@ def list_tables(request):
     try:
         conn = get_pg_connection()
         cur = conn.cursor()
+
         cur.execute("""
-            SELECT table_name FROM information_schema.tables 
-            WHERE table_schema='public' ORDER BY table_name;
+            SELECT table_name
+            FROM information_schema.tables
+            WHERE table_schema='public'
+            ORDER BY table_name;
         """)
-        tables = [r[0] for r in cur.fetchall()]
+
+        tables = [row[0] for row in cur.fetchall()]
         cur.close()
         conn.close()
+
         return JsonResponse({"tables": tables})
+
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
@@ -64,7 +72,6 @@ def table_info(request, table_name):
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
-
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def run_query(request):
@@ -79,12 +86,13 @@ def run_query(request):
         cur.execute(query)
 
         if cur.description:
-            columns = [col[0] for col in cur.description]
+            cols = [c[0] for c in cur.description]
             rows = cur.fetchall()
-            data = [dict(zip(columns, r)) for r in rows]
+            result = [dict(zip(cols, row)) for row in rows]
+
             cur.close()
             conn.close()
-            return JsonResponse({"columns": columns, "rows": data})
+            return JsonResponse({"columns": cols, "rows": result})
 
         conn.commit()
         affected = cur.rowcount
