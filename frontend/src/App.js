@@ -1,18 +1,24 @@
+// src/App.js
 import "./App.css";
 import React, { useEffect, useState, useCallback } from "react";
 import QueryEditor from "./components/QueryEditor";
 import TableList from "./components/TableList";
 import ResultsTable from "./components/ResultsTable";
-import { runQuery, fetchTables, fetchTableInfo, getProfile } from "./api";
+import {
+  runQuery as apiRunQuery,
+  fetchTables as apiFetchTables,
+  fetchTableInfo as apiFetchTableInfo,
+  getProfile as apiGetProfile,
+} from "./api";
 import SchemaTable from "./components/SchemaTable";
 import AuthPage from "./pages/AuthPage";
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem("token"));
-  const [query, setQuery] = useState("select * from Customers");
+  const [query, setQuery] = useState("");
   const [result, setResult] = useState(null);
   const [tables, setTables] = useState([]);
-  const [selectedTable, setSelectedTable] = useState("Customers");
+  const [selectedTable, setSelectedTable] = useState(null);
   const [tableInfo, setTableInfo] = useState(null);
   const [history, setHistory] = useState([]);
   const [profile, setProfile] = useState(null);
@@ -25,6 +31,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // called after successful login
   function handleLogin(access, refresh) {
     localStorage.setItem("token", access);
     localStorage.setItem("refresh", refresh);
@@ -33,7 +40,6 @@ export default function App() {
     setResult(null);
     setToken(access);
   }
-  
 
   function logout() {
     localStorage.removeItem("token");
@@ -43,44 +49,123 @@ export default function App() {
     setHistory([]);
     setResult(null);
     setProfile(null);
+    setTables([]);
+    setSelectedTable(null);
+    setTableInfo(null);
   }
 
+  // load tables + profile whenever token is available
   useEffect(() => {
     if (token) {
-      loadTables();
       loadProfile();
+      loadTables();
     }
   }, [token]);
 
+  // load profile (safe/robust)
   async function loadProfile() {
-    const p = await getProfile();
-    setProfile(p);
+    try {
+      const p = await apiGetProfile();
+      // apiGetProfile should return an object like { username:..., email:..., id:... }
+      if (p && !p.error) {
+        setProfile(p);
+      } else {
+        // If token expired / unauthorized, force logout
+        if (p && p.detail === "Authentication credentials were not provided.") {
+          logout();
+        }
+      }
+    } catch (err) {
+      // don't crash app on profile load error
+      console.error("loadProfile error:", err);
+    }
   }
 
+  // load tables and auto-select first table
   async function loadTables() {
-    const r = await fetchTables();
-    if (r.tables) setTables(r.tables);
+    setError(null);
+    try {
+      const r = await apiFetchTables();
+      if (r && r.tables) {
+        setTables(r.tables);
+        // if there's no selected table or selected not in list, pick first
+        if (!selectedTable || !r.tables.includes(selectedTable)) {
+          const first = r.tables.length ? r.tables[0] : null;
+          setSelectedTable(first);
+          if (first) {
+            // fetch its info
+            await loadTableInfo(first);
+          } else {
+            setTableInfo(null);
+          }
+        } else {
+          // refresh info for existing selected table
+          await loadTableInfo(selectedTable);
+        }
+      } else if (r && r.error) {
+        setError(r.error);
+      } else {
+        setTables([]);
+      }
+    } catch (err) {
+      console.error("loadTables error:", err);
+      setError(String(err));
+    }
   }
 
+  // fetch schema + sample rows for a table
+  async function loadTableInfo(name) {
+    if (!name) return;
+    setError(null);
+    setTableInfo(null);
+    try {
+      const info = await apiFetchTableInfo(name);
+      if (info && !info.error) {
+        setTableInfo(info);
+      } else if (info && info.error) {
+        setError(info.error);
+      } else {
+        setTableInfo(null);
+      }
+    } catch (err) {
+      console.error("loadTableInfo error:", err);
+      setError(String(err));
+    }
+  }
+
+  // triggered by user pressing Run
   async function onRun() {
     setLoading(true);
     setError(null);
-    const r = await runQuery(query);
-    if (r.error) {
-      setError(r.error);
-    } else {
-      setResult(r);
-      if (!history.includes(query)) setHistory([query, ...history]);
+    setResult(null);
+    try {
+      const r = await apiRunQuery(query);
+      if (!r) {
+        setError("No response from server");
+      } else if (r.error) {
+        setError(r.error);
+      } else {
+        // r may contain { columns, rows } or { message, rows_affected }
+        setResult(r);
+        if (query && !history.includes(query)) setHistory([query, ...history].slice(0, 30));
+      }
+    } catch (err) {
+      console.error("onRun error:", err);
+      setError(String(err));
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
+  // user selects a table from the left list
   async function onSelectTable(name) {
     setSelectedTable(name);
-    const info = await fetchTableInfo(name);
-    setTableInfo(info);
+    await loadTableInfo(name);
+    // optionally set editor example query
+    setQuery(`SELECT * FROM "${name}" LIMIT 100;`);
   }
 
+  // drag handlers for resizing panels
   const startLeftDrag = () => setDraggingLeft(true);
   const startRightDrag = () => setDraggingRight(true);
 
@@ -109,19 +194,16 @@ export default function App() {
     };
   }, [handleMove, stopDrag]);
 
+  // if not logged in, show auth page
   if (!token) return <AuthPage onLogin={handleLogin} />;
 
   return (
     <div className="layout">
       <div className="sidebar" style={{ width: leftWidth }}>
         <h1 className="main-title">SQL Runner</h1>
-        <div className="sub-title">Run SQL on SQLite — Django + React</div>
+        <div className="sub-title">Run SQL — Django + React</div>
 
-        <TableList
-          tables={tables}
-          selected={selectedTable}
-          onSelect={onSelectTable}
-        />
+        <TableList tables={tables} selected={selectedTable} onSelect={onSelectTable} />
 
         <h2 className="side-heading">Recent Queries</h2>
         <ul className="recent-list">
@@ -135,7 +217,7 @@ export default function App() {
         <div className="sidebar-bottom">
           {profile && (
             <div className="user-info">
-              <span className="email">{profile.username}</span>
+              <span className="email">{profile.username || profile.email}</span>
             </div>
           )}
           <button className="logout-btn" onClick={logout}>
@@ -163,15 +245,11 @@ export default function App() {
       <div className="drag-divider" onMouseDown={startRightDrag}></div>
 
       <div className="schema-panel" style={{ width: rightWidth }}>
-        <div className="schema-title">{selectedTable}</div>
+        <div className="schema-title">{selectedTable || "No table selected"}</div>
         <div className="schema-sub">Schema</div>
 
         <div className="schema-box">
-          {tableInfo ? (
-            <SchemaTable columns={tableInfo.columns} />
-          ) : (
-            "Select a table to view schema"
-          )}
+          {tableInfo ? <SchemaTable columns={tableInfo.columns} sampleRows={tableInfo.sample_rows} /> : "Select a table to view schema"}
         </div>
       </div>
     </div>

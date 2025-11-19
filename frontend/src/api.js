@@ -1,53 +1,44 @@
-const API_BASE = process.env.REACT_APP_API_URL;
-
-function authHeader() {
-  return {
-    Authorization: `Bearer ${localStorage.getItem("token")}`,
-  };
-}
+const API_BASE = process.env.REACT_APP_API || "https://sql-runner-backend-tr4a.onrender.com/api";
 
 async function request(url, method = "GET", body = null) {
-  const options = {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(API_BASE + url, {
     method,
     headers: {
       "Content-Type": "application/json",
-      ...authHeader(),
+      Authorization: token ? `Bearer ${token}` : "",
     },
-  };
-  if (body) options.body = JSON.stringify(body);
+    body: body ? JSON.stringify(body) : null,
+  });
 
-  const res = await fetch(`${API_BASE}${url}`, options);
-
-  if (res.status === 401) {
-    localStorage.removeItem("token");
-    localStorage.removeItem("refresh");
-    window.location.href = "/login";
-    return;
+  if (!res.ok) {
+    throw new Error(await res.text());
   }
 
   return res.json();
 }
 
-export async function login(data) {
-  return request("/login/", "POST", data);
+export async function login(email, password) {
+  return request("/login/", "POST", { email, password });
 }
 
-export async function signup(data) {
-  return request("/signup/", "POST", data);
-}
-
-export async function runQuery(query) {
-  return request("/run-query/", "POST", { query });
-}
-
-export async function listTables() {
-  return request("/list-tables/", "GET");
-}
-
-export async function tableInfo(table) {
-  return request(`/table-info/${table}/`, "GET");
+export async function signup(name, email, password) {
+  return request("/signup/", "POST", { name, email, password });
 }
 
 export async function getProfile() {
   return request("/profile/", "GET");
+}
+
+export async function fetchTables() {
+  return request("/list-tables/", "GET");
+}
+
+export async function fetchTableInfo(table) {
+  return request(`/table-info/${table}/`, "GET");
+}
+
+export async function runQuery(query) {
+  return request("/run-query/", "POST", { query });
 }
