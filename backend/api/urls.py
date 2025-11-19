@@ -1,11 +1,9 @@
 from django.urls import path
-from rest_framework_simplejwt.views import TokenRefreshView
-
 from .views import (
-    signup,
-    login,
-    forgot_password,
-    reset_password,
+    SignupView,
+    LoginView,
+    ForgotPasswordView,
+    ResetPasswordView,
     run_query,
     list_tables,
     table_info,
@@ -14,23 +12,14 @@ from .views import (
 )
 
 urlpatterns = [
+    path("signup/", SignupView.as_view(), name="signup"),
+    path("login/", LoginView.as_view(), name="login"),
+    path("forgot-password/", ForgotPasswordView.as_view(), name="forgot_password"),
+    path("reset-password/", ResetPasswordView.as_view(), name="reset_password"),
 
-    # ---------- AUTH ----------
-    path("signup/", signup, name="signup"),
-    path("login/", login, name="login"),
-    path("forgot-password/", forgot_password, name="forgot-password"),
-    path("reset-password/<str:uid>/<str:token>/", reset_password, name="reset-password"),
-    path("token/refresh/", TokenRefreshView.as_view(), name="token-refresh"),
-
-    # ---------- USER PROFILE ----------
-    path("profile/", user_profile, name="profile"),
-
-    # ---------- SQL RUNNER ----------
-    path("run_query/", run_query, name="run-query"),
-    path("tables/", list_tables, name="table-list"),
-    path("table_info/<str:table_name>/", table_info, name="table-info"),
-
-    # ---------- HEALTH ----------
-    path("", health, name="root-health"),
+    path("run-query/", run_query, name="run_query"),
+    path("list-tables/", list_tables, name="list_tables"),
+    path("table-info/<str:table_name>/", table_info, name="table_info"),
     path("health/", health, name="health"),
+    path("profile/", user_profile, name="user_profile"),
 ]
