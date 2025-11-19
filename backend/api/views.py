@@ -1,20 +1,17 @@
+import os
 import psycopg2
-from django.http import JsonResponse
-from django.conf import settings
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
 import dj_database_url
+from django.http import JsonResponse
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from django.conf import settings
 
 
-# ==========================
-#  POSTGRES CONNECTION
-# ==========================
+# ---------------------------------------------------
+# POSTGRES CONNECTION (IMPORTANT)
+# ---------------------------------------------------
 def get_pg_connection():
-    """Create PostgreSQL connection using DATABASE_URL."""
-    
-    # Render automatically provides DATABASE_URL, so use that
-    db_url = settings.DATABASES["default"]["URL"]
-
+    db_url = os.environ.get("DATABASE_URL")   # from Render
     config = dj_database_url.parse(db_url)
 
     conn = psycopg2.connect(
@@ -28,9 +25,9 @@ def get_pg_connection():
     return conn
 
 
-# ==========================
-#  LIST TABLES
-# ==========================
+# ---------------------------------------------------
+# LIST TABLES
+# ---------------------------------------------------
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def list_tables(request):
@@ -39,9 +36,9 @@ def list_tables(request):
         cur = conn.cursor()
 
         cur.execute("""
-            SELECT table_name
-            FROM information_schema.tables
-            WHERE table_schema = 'public'
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_schema='public'
             ORDER BY table_name;
         """)
 
@@ -56,9 +53,9 @@ def list_tables(request):
         return JsonResponse({"error": str(e)}, status=500)
 
 
-# ==========================
-#  TABLE INFO
-# ==========================
+# ---------------------------------------------------
+# TABLE SCHEMA
+# ---------------------------------------------------
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def table_info(request, table_name):
@@ -66,40 +63,38 @@ def table_info(request, table_name):
         conn = get_pg_connection()
         cur = conn.cursor()
 
-        # columns
         cur.execute("""
-            SELECT column_name, data_type
-            FROM information_schema.columns
+            SELECT column_name, data_type 
+            FROM information_schema.columns 
             WHERE table_name = %s
         """, [table_name])
 
-        columns = [{"name": col[0], "type": col[1]} for col in cur.fetchall()]
+        columns = [{"name": c[0], "type": c[1]} for c in cur.fetchall()]
 
-        # sample rows
         cur.execute(f'SELECT * FROM "{table_name}" LIMIT 5')
         rows = cur.fetchall()
         colnames = [desc[0] for desc in cur.description]
 
-        sample_data = [dict(zip(colnames, row)) for row in rows]
+        data = [dict(zip(colnames, row)) for row in rows]
 
         cur.close()
         conn.close()
 
-        return JsonResponse({"columns": columns, "sample_rows": sample_data})
+        return JsonResponse({"columns": columns, "sample_rows": data})
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)
 
 
-# ==========================
-#  RUN QUERY
-# ==========================
+# ---------------------------------------------------
+# RUN SQL QUERY (EDITOR)
+# ---------------------------------------------------
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def run_query(request):
-    query = request.data.get("query", "")
+    query = request.data.get("query", "").strip()
 
-    if not query.strip():
+    if not query:
         return JsonResponse({"error": "Empty query"}, status=400)
 
     try:
@@ -108,7 +103,7 @@ def run_query(request):
 
         cur.execute(query)
 
-        # SELECT queries return results
+        # SELECT QUERY
         if cur.description:
             columns = [col[0] for col in cur.description]
             rows = cur.fetchall()
@@ -116,10 +111,9 @@ def run_query(request):
 
             cur.close()
             conn.close()
-
             return JsonResponse({"columns": columns, "rows": data})
 
-        # INSERT, UPDATE, DELETE
+        # INSERT/UPDATE/DELETE
         conn.commit()
         affected = cur.rowcount
 
@@ -132,9 +126,9 @@ def run_query(request):
         return JsonResponse({"error": str(e)}, status=400)
 
 
-# ==========================
-#  HEALTH CHECK
-# ==========================
+# ---------------------------------------------------
+# HEALTH CHECK
+# ---------------------------------------------------
 @api_view(["GET"])
 def health(request):
     return JsonResponse({"status": "ok"})
