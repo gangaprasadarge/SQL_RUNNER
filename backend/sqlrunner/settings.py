@@ -1,22 +1,18 @@
 from pathlib import Path
 from datetime import timedelta
 import os
-import dj_database_url 
-
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 SECRET_KEY = os.environ.get(
     "DJANGO_SECRET_KEY",
-    "django-insecure-4#)(g)hs5^mtgfk%9a6!2_wp+5q%nwis&l@&5qmjbklqomm0@g" 
+    "django-insecure-4#)(g)hs5^mtgfk%9a6!2_wp+5q%nwis&l@&5qmjbklqomm0@g"
 )
 
+DEBUG = False
 
-DEBUG = False 
-
-FRONTEND_URL = "https://sql-runner-23g4.onrender.com"
-LOCAL_FRONTEND = "http://localhost:3000"
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://sql-runner-23g4.onrender.com")
 
 ALLOWED_HOSTS = [
     "sql-runner-backend-tr4a.onrender.com",
@@ -27,31 +23,28 @@ ALLOWED_HOSTS = [
 
 CORS_ALLOWED_ORIGINS = [
     FRONTEND_URL,
-    LOCAL_FRONTEND
+    "http://localhost:3000"
 ]
 
 CORS_ALLOW_CREDENTIALS = True
-
 
 CSRF_TRUSTED_ORIGINS = [
     "https://sql-runner-backend-tr4a.onrender.com",
     "https://sql-runner-23g4.onrender.com",
 ]
 
-
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'corsheaders',
-    'rest_framework',
-    'rest_framework_simplejwt',
-    'api',
-    'anymail',
-   
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "corsheaders",
+    "rest_framework",
+    "rest_framework_simplejwt",
+    "api",
+    "anymail",
 ]
 
 REST_FRAMEWORK = {
@@ -66,7 +59,7 @@ SIMPLE_JWT = {
 }
 
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware", 
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -76,44 +69,28 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_SSL_REDIRECT = True
 
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SECURE_SSL_REDIRECT = True 
-
-ROOT_URLCONF = 'sqlrunner.urls'
+ROOT_URLCONF = "sqlrunner.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'sqlrunner.wsgi.application'
-FRONTEND_URL = os.environ.get("FRONTEND_URL")  
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL")
-
-
-DATABASES = {
-    'default': dj_database_url.config(
-        default=os.environ.get("DATABASE_URL"),
-        conn_max_age=600,
-        conn_health_checks=True
-    )
-}
-
-
-
-DATABASES["default"]["URL"] = os.environ.get("DATABASE_URL")
+WSGI_APPLICATION = "sqlrunner.wsgi.application"
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
@@ -122,34 +99,29 @@ DATABASES = {
 }
 
 AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+LANGUAGE_CODE = "en-us"
+TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles") 
+STATIC_URL = "static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-
-EMAIL_BACKEND = "anymail.backends.sendgrid.EmailBackend"
-
+EMAIL_BACKEND = "anymail.backends.resend.EmailBackend"
 ANYMAIL = {
-    "SENDGRID_API_KEY": os.environ.get("EMAIL_HOST_PASSWORD"),
+    "RESEND_API_KEY": os.environ.get("RESEND_API_KEY"),
 }
 
-DEFAULT_FROM_EMAIL = os.environ.get("EMAIL_HOST_USER")
-SERVER_EMAIL = os.environ.get("EMAIL_HOST_USER")
-
-
-
+DEFAULT_FROM_EMAIL = "noreply@sqlrunner.dev"
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
 LOGGING = {
     "version": 1,
@@ -159,12 +131,12 @@ LOGGING = {
     "loggers": {
         "django": {
             "handlers": ["console"],
-            "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"), 
+            "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
             "propagate": False,
         },
         "corsheaders": {
             "handlers": ["console"],
-            "level": "DEBUG", 
+            "level": "DEBUG",
             "propagate": False,
         }
     }
